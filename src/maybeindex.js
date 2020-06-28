@@ -1,37 +1,26 @@
-import React, { useState, useContext } from 'react';
+import React, { useEffect, useState, useContext } from "react";
+import { render } from "react-dom";
 import { Router, Switch, Route } from "react-router";
-import { Link, render } from "react-dom";
+import { Link } from "react-router-dom";
 import { createBrowserHistory } from "history";
 import Cookies from "js-cookie";
 
+import { SessionContext, getSessionCookie, setSessionCookie } from "./Utilities/sessions";
+
+
 const history = createBrowserHistory();
 
-/*const Dashboard = () => {
-  const { session } = useContext(SessionContext);
-
-  if (!session) return null;
-
-  return <div>Dashboard</div>
-};*/
-
 const LoginHandler = ({ history }) => {
-  const session = useContext(SessionContext);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
-
-    const loggedIn = true;//await ....
-    if (loggedIn) {
-      setEmail({ email });
-      session.setSession({ email });
-      Cookies.remove('cwsSession');
-      Cookies.set('cwsSession', email, { expires: 7 });
-      setLoading(false);
-      history.push('/');
-    }
+    // NOTE request to api login here instead of this fake promise
+    await new Promise(r => setTimeout(r(), 1000));
+    setSessionCookie({email});
+    setLoading(false);
+    history.push("/");
   };
 
   if (loading) {
@@ -54,54 +43,42 @@ const LoginHandler = ({ history }) => {
 };
 
 const LogoutHandler = ({ history }) => {
-  Cookies.remove('cwsSession');
-
-
-  return (
-    <div>LogoutHandler</div>
+  useEffect(
+    () => {
+      Cookies.remove("session");
+      history.push("/login");
+    },
+    [history]
   );
-}
+
+  return <div>Logging out!</div>;
+};
 
 const ProtectedHandler = ({ history }) => {
-  const { session } = useContext(SessionContext);
-  const sessionFunctions = useContext(SessionContext);
-  console.log('ProtectedHandler session: ', session);
-  console.log('ProtectedHandler sessionFunctions: ', sessionFunctions);
-
-  if (session.email === undefined) {
-    console.log('session.email === undefined');
-
-    return (
-      <div>
-        {LoginHandler({ history })}
-      </div>
-    );
-  } /*else if (!session.email) {
-    const cookie = Cookies.get('cwsSession');
-    contextSession.setSession(cookie);
-  }*/
+  const session = useContext(SessionContext);
+  console.log('session: ', session);
 
   return (
     <div>
-      <div>ProtectedHandler for {session.email}</div>
+      <h6>Protected data for {session.email}</h6>
+      <Link to="/logout">Logout here</Link>
     </div>
   );
-}
-
-const SessionContext = React.createContext({
-  session: {},
-  setSession: () => {},
-});
+};
 
 const Routes = () => {
-  const [session, setSession] = useState({});
-  const contextSession = {
-    session,
-    setSession
-  };
+  const [session, setSession] = useState(getSessionCookie());
+  const stateCookie = JSON.stringify(session);
+
+  useEffect(
+    () => {
+      setSession(getSessionCookie());
+    },
+    [stateCookie]
+  );
 
   return (
-    <SessionContext.Provider value={contextSession}>
+    <SessionContext.Provider value={session}>
       <Router history={history}>
         <div className="navbar">
           <h6 style={{ display: "inline" }}>Nav Bar</h6>
@@ -117,7 +94,7 @@ const Routes = () => {
       </Router>
     </SessionContext.Provider>
   );
-}
+};
 
 const App = () => (
   <div className="App">
